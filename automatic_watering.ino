@@ -1,25 +1,32 @@
 #include <LiquidCrystal_I2C.h>
-#include <Time.h>
+#include <TimeLib.h>
 #include "Characters.h"
+
 
 //Constantes
 const int SetupPin = 2; //Switch arriba
-const int ManualPin = 3;//Switch abajo
+const int AutoPin = 3;//Switch abajo
 const int SelectPin = 4;//Pulsador 1
 const int PlusPin = 5;  //Pulsador 2
 const int MinusPin = 6; //Pulsador 3
+const int HumidityPin = A0; //Sensor Humedad
+const int UpperThreshold = 580; //Humedo
+const int LowerThreshold = 500; //Seco
+const int RelayPin = 7; //Relay
 
 //Estados de botones
 int SetupButton = 0;
-int ManualButton = 0;
+int AutoButton = 0;
 int SelectButton = 0;
 int PlusButton = 0;
 int MinusButton = 0;
+int Humidity = 0;
 
 
 //Estado de sistemas
 int KeyByte = 0;
 int SetupStatus = 0;
+int Water = 0;
 
 //Configurar LCD
 LiquidCrystal_I2C lcd(0x27,2,1,0,4,5,6,7,3,POSITIVE);
@@ -53,21 +60,24 @@ void setup() {
   lcd.home();
   lcd.backlight();
   pinMode(SetupPin,INPUT);
-  pinMode(ManualPin,INPUT);
+  pinMode(AutoPin,INPUT);
   pinMode(SelectPin,INPUT);
   pinMode(PlusPin,INPUT);
   pinMode(MinusPin,INPUT);
+  pinMode(HumidityPin,INPUT);
+  pinMode(RelayPin,OUTPUT);
 
   lcd.createChar(0, black);
   lcd.createChar(1, arrow);
 
 }
 
+
 void loop() {
 
   //Check Arduino State
   SetupButton = digitalRead(SetupPin);
-  ManualButton = digitalRead(ManualPin);
+  AutoButton = digitalRead(AutoPin);
   t = now();
 
   //Mostrar la hora
@@ -152,7 +162,50 @@ void loop() {
    
     
   }
+  while(AutoButton==HIGH){
   
-  //Funcionamiento Automático
+    //Funcionamiento Automático
+      if(AutoButton==HIGH){
+      lcd.clear();
+    }
+    while(AutoButton == HIGH){
+      //DisplayTime();
+      lcd.home();
+      lcd.print("M");
+      lcd.setCursor(6,1);
+      Humidity = analogRead(HumidityPin);
+      lcd.print(Humidity);
+      if(Humidity>UpperThreshold){
+        lcd.setCursor(15,1);
+        Water = 1;
+        lcd.print(Water);
+      }
+      if(Humidity<LowerThreshold){
+        lcd.setCursor(15,1);
+        Water = 0;
+        lcd.print(Water);
+      }
+      digitalWrite(RelayPin,Water);
+      
+      AutoButton = digitalRead(AutoPin);
+      
+    }
+    Water = 0;
+    digitalWrite(RelayPin,Water);
+    lcd.clear();
+    lcd.home();
+    lcd.print("Fuera Auto");
+    delay(1000);
+    lcd.clear();
+  } 
+  
+  if(SetupButton==LOW and AutoButton==LOW){
+    //Usar la hora
+    while(hour(t)==6 and minute(t)==0 and SetupButton==LOW and AutoButton==LOW){
+      digitalWrite(RelayPin,HIGH);
+    }
+    digitalWrite(RelayPin,LOW);
+    
+  }
   
 }

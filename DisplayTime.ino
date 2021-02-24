@@ -24,10 +24,4 @@ void DisplayTime() {
     lcd.setCursor(9,0);
     lcd.print(minute(t));
   }
-  /*
-  lcd.setCursor(0,0);
-  lcd.write(0);
-  lcd.setCursor(0,1);
-  lcd.write(1);
-  */
 }
